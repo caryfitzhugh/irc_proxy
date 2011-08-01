@@ -1,38 +1,44 @@
 class IRCConnection
-  def self.get
+  def initialize(config = {})
+    @config = config
+  end
+
+  def connection
     if !@s
-      @s = TCPSocket.open(irc_config[:server], irc_config[:port] || 6667)
-      @s.puts "PASS #{irc_config[:password]}" if irc_config[:password]
-      @s.puts "NICK #{irc_config[:user_name]}"
-      @s.puts "USER #{irc_config[:user_name]} 0 * :#{irc_config[:user_name]}"
+      @s = TCPSocket.open(@config[:server], @config[:port] || 6667)
+      @s.puts "PASS #{@config[:password]}" if @config[:password]
+      @s.puts "NICK #{@config[:nick]}"
+      @s.puts "USER #{@config[:nick]} 0 * :#{@config[:nick]}"
       sleep 12
       puts @s.recvmsg_nonblock 5000
-      @s.puts "JOIN :#{irc_config[:room]}"
+    end
+    yield @s if block_given?
+    @s
+  end
+
+  def join_room(room)
+    @rooms ||= {}
+    if !@rooms[room]
+      @s.puts "JOIN :#{room}"
       sleep 7
       puts @s.recvmsg_nonblock 5000
     end
-    @s
-  end
-  def self.irc_config
-     {
-    :server=>'',
-    :port  =>'',
-    :password => '',
-    :user_name => '',
-    :room => ''
-    }
   end
 
-
-  def self.irc_message_post(message)
-    c = IRCConnection.get
-    c.puts "PRIVMSG #{irc_config[:room]} :#{message}"
+  def irc_message_post(room, message)
+    connection do |c|
+      join_room(room)
+      c.puts "PRIVMSG #{room} :#{message}"
+    end
   end
 
-  def self.leave_irc
-    c = IRCConnection.get
-    c.puts "PART :#{irc_config[:room]}"
-    c.puts "QUIT"
-    puts c.gets until s.eof?
+  def leave_irc
+    connection do |c|
+      @rooms.each do |room|
+        c.puts "PART :#{room}"
+      end
+      c.puts "QUIT"
+      puts c.gets until s.eof?
+    end
   end
 end
