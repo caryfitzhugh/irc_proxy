@@ -1,0 +1,6 @@
+Small app which connects to an IRC server - and stays connected.
+All POSTS to the / will send to the IRC server / room selected in the config.
+
+curl -X POST -d message=boo http://localhost:4567
+
+is default.
