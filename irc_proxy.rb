@@ -9,6 +9,7 @@ require 'ruby-debug'
 $config = YAML.load(ERB.new(File.read("./config.yml")).result)
 $irc = IRCConnection.new($config)
 
+get "/favicon.ico" do [404, "404"]; end
 
 ["/:room", "/"].each do |route|
   get route do
@@ -23,18 +24,10 @@ $irc = IRCConnection.new($config)
       </form>
     HTML
   end
+
+  post route do
+    $irc.irc_message_post (params[:room] || "#tester"), params[:message]
+    [200, "Sent #{params[:message]}"]
+  end
 end
 
-get "/favicon.ico" do
-  [404, "404"]
-end
-
-post "/:room" do
-  $irc.irc_message_post('#' + params[:room], params[:message])
-  [200, "#{params[:room]} #{params[:message]}"]
-end
-
-post "/" do
-  $irc.irc_message_post "#tester", params[:message]
-  [200, "Sent #{params[:message]}"]
-end
