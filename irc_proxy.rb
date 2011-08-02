@@ -9,7 +9,9 @@ require 'ruby-debug'
 $config = YAML.load(ERB.new(File.read("./config.yml")).result)
 $irc = IRCConnection.new($config)
 
-get "/favicon.ico" do [404, "404"]; end
+get "/favicon.ico" do
+  [404, "404"]
+end
 
 ["/:room", "/"].each do |route|
   get route do

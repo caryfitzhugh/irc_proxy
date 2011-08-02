@@ -6,12 +6,14 @@ class IRCConnection
   def connection
     if !@s
       @s = TCPSocket.open(@config[:server], @config[:port] || 6667)
+      @connection_retry = 0
       @s.puts "PASS #{@config[:password]}" if @config[:password]
       @s.puts "NICK #{@config[:nick]}"
       @s.puts "USER #{@config[:nick]} 0 * :#{@config[:nick]}"
       sleep 12
       puts @s.recvmsg_nonblock 5000
     end
+
     yield @s if block_given?
     @s
   end
@@ -19,7 +21,7 @@ class IRCConnection
   def join_room(room)
     @rooms ||= {}
     if !@rooms[room]
-      @s.puts "JOIN :#{room}"
+      connection.puts "JOIN :#{room}"
       sleep 7
       puts @s.recvmsg_nonblock 5000
     end
@@ -27,8 +29,15 @@ class IRCConnection
 
   def irc_message_post(room, message)
     connection do |c|
-      join_room(room)
-      c.puts "PRIVMSG #{room} :#{message}"
+      begin
+        join_room(room)
+        c.puts "PRIVMSG #{room} :#{message}"
+      rescue Errno::EPIPE, Errno::ECONNRESET => e
+        puts "ERROR!!!"
+        @s = nil # set s to nil, force a reconnection
+        retry if (@connection_retry += 1) < 5
+        raise e
+      end
     end
   end
 
