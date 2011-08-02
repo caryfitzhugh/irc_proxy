@@ -1,0 +1,8 @@
+---
+# These setting can either be set using
+# enviroment variables (heroku style) or
+# by editing this file directly
+:server: <%= ENV['IRC_PROXY_SERVER'] %>
+:port: <%= ENV['IRC_PROXY_PORT'] || "6667" %>
+:nick: <%= ENV['IRC_PROXY_NICK'] || "proxy" %>
+:password: <%= ENV['IRC_PROXY_PASSWORD'] %>
